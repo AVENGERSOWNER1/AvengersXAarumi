@@ -1,75 +1,42 @@
-import asyncio
-import random
 import time
+import random
 from pyrogram import filters
 from pyrogram.enums import ChatType
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, Message
-from youtubesearchpython.__future__ import VideosSearch
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from youtubesearchpython.future import VideosSearch
 
 import config
 from AarumiMusic import app
 from AarumiMusic.misc import _boot_
 from AarumiMusic.plugins.sudo.sudoers import sudoers_list
+from AarumiMusic.utils.database import get_served_chats, get_served_users
 from AarumiMusic.utils import bot_sys_stats
 from AarumiMusic.utils.database import (
     add_served_chat,
     add_served_user,
     blacklisted_chats,
     get_lang,
-    get_served_chats,
-    get_served_users,
     is_banned_user,
     is_on_off,
 )
 from AarumiMusic.utils.decorators.language import LanguageStart
 from AarumiMusic.utils.formatters import get_readable_time
-from AarumiMusic.utils.inline import first_page, private_panel, start_panel
+from AarumiMusic.utils.inline import help_pannel, private_panel, start_panel
 from config import BANNED_USERS
 from strings import get_string
 
-SHASHANK_VD = ["https://telegra.ph/file/89c5023101b65f21fb401.mp4",
-          "https://telegra.ph/file/bbc914cce6cce7f607641.mp4",
-          "https://telegra.ph/file/abc578ecc222d28a861ba.mp4",
-          "https://telegra.ph/file/065f40352707e9b5b7c15.mp4",
-          "https://telegra.ph/file/52ceaf02eae7eed6c9fff.mp4",
-          "https://telegra.ph/file/299108f6ac08f4e65e47a.mp4",
-          "https://telegra.ph/file/7a4e08bd04d628de71fc1.mp4",
-          "https://telegra.ph/file/0ad8b932fe5f7684f941c.mp4",
-          "https://telegra.ph/file/95ebe2065cfb1ac324a1c.mp4",
-          "https://telegra.ph/file/98cf22ccb987f9fedac5e.mp4",
-          "https://telegra.ph/file/f1b1754fc9d01998f24df.mp4",
-          "https://telegra.ph/file/421ee22ed492a7b8ce101.mp4"]
 
-SHASHANK_PH = [
-    "https://files.catbox.moe/jrupn9.jpg",
-    "https://files.catbox.moe/5z141p.jpg",
-    "https://files.catbox.moe/fnl0h7.jpg",
-    "https://files.catbox.moe/1lz1go.jpg",
-    "https://files.catbox.moe/avackl.jpg",
-    "https://files.catbox.moe/1yrzwz.jpg",
-    "https://files.catbox.moe/6y22qw.jpg",
-    "https://files.catbox.moe/gnnsf2.jpg",
-    "https://files.catbox.moe/ss6r60.jpg",
-    "https://files.catbox.moe/yuob18.jpg",
-    "https://files.catbox.moe/i9xrrp.jpg",
-    "https://files.catbox.moe/a9tx8f.jpg"
-    "https://files.catbox.moe/wlt26x.jpg",
-    "https://files.catbox.moe/c1lylh.jpg",
-    "https://files.catbox.moe/82eymp.jpg",
+SHASHANK_PIC = [
+    "https://files.catbox.moe/hgvcz6.jpg",
+    "https://files.catbox.moe/90ad4u.jpg",
+    "https://files.catbox.moe/vwe6s7.jpg",
+    "https://files.catbox.moe/n3dh8g.jpg",
+    "https://files.catbox.moe/d5gvwa.jpg",
+    "https://files.catbox.moe/b9vscc.jpg",
+    "https://files.catbox.moe/hgvcz6.jpg",
+    "https://files.catbox.moe/4rpo7o.jpg"
 ]
 
-STICKERS = [  
-    "CAACAgUAAxkBAAEBdnpm-CKSe_WqOslpePn3ECfb_RaE9wACsRIAAk3CoVcRpQ6OPeMXSh4E",
-    "CAACAgUAAxkBAAEBdnxm-CKSAvkd77cIkLVi22i5KetRwAACjBIAAmiswVfmvH70I9yO1B4E",
-    "CAACAgUAAxkBAAEBdn1m-CKTitpex6wRSb7XepTBL1m7hQACGBMAAgj0wVc1DtFNJKC_Ih4E",
-    "CAACAgUAAxkBAAEBdn5m-CKUm8kE8yW1wfVn93uPBvE3nwACoxMAArRPwFeUVWErgkaFyR4E",
-    "CAACAgUAAxkBAAEBdn9m-CKVC9XUkmuOW6b1gIL0Teg6HgACyREAAoz_wFeQweR6NJm6Yh4E",
-    "CAACAgUAAxkBAAEBdntm-CKSYkLSIPrQAiOxMeBfyZpGegACfRAAAlMQwVdx2UGzjxf3CR4E",
-]
-
-async def delete_sticker_after_delay(message, delay):
-    await asyncio.sleep(delay)
-    await message.delete()
 
 @app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
 @LanguageStart
@@ -78,22 +45,24 @@ async def start_pm(client, message: Message, _):
     if len(message.text.split()) > 1:
         name = message.text.split(None, 1)[1]
         if name[0:4] == "help":
-            keyboard = first_page(_)
-            await message.reply_video(
-                random.choice(SHASHANK_VD),
+            keyboard = help_pannel(_)
+            return await message.reply_photo(
+                random.choice(SHASHANK_PIC),
+                has_spoiler=True,
                 caption=_["help_1"].format(config.SUPPORT_CHAT),
                 reply_markup=keyboard,
             )
-        elif name[0:3] == "sud":
+        if name[0:3] == "sud":
             await sudoers_list(client=client, message=message, _=_)
             if await is_on_off(2):
-                await app.send_message(
+                return await app.send_message(
                     chat_id=config.LOGGER_ID,
-                    text=f"❖ {message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>sᴜᴅᴏʟɪsᴛ</b>.\n\n<b>๏ ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>๏ ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
+                    text=f"✦ {message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>sᴜᴅᴏʟɪsᴛ</b>.\n\n<b>✦ ᴜsᴇʀ ɪᴅ ➠</b> <code>{message.from_user.id}</code>\n<b>✦ ᴜsᴇʀɴᴀᴍᴇ ➠</b> @{message.from_user.username}",
                 )
-        elif name[0:3] == "inf":
+            return
+        if name[0:3] == "inf":
             m = await message.reply_text("🔎")
-            query = str(name).replace("info_", "", 1)
+            query = (str(name)).replace("info_", "", 1)
             query = f"https://www.youtube.com/watch?v={query}"
             results = VideosSearch(query, limit=1)
             for result in (await results.next())["result"]:
@@ -117,44 +86,46 @@ async def start_pm(client, message: Message, _):
                 ]
             )
             await m.delete()
-            await app.send_video(
+            await app.send_photo(
                 chat_id=message.chat.id,
-                video=thumbnail,
+                photo=thumbnail,
                 caption=searched_text,
                 reply_markup=key,
             )
             if await is_on_off(2):
-                await app.send_message(
+                return await app.send_message(
                     chat_id=config.LOGGER_ID,
-                    text=f"❖ {message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n<b>๏ ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>๏ ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
+                    text=f"✦ {message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ ᴛᴏ ᴄʜᴇᴄᴋ <b>ᴛʀᴀᴄᴋ ɪɴғᴏʀᴍᴀᴛɪᴏɴ</b>.\n\n✦ <b>ᴜsᴇʀ ɪᴅ ➠</b> <code>{message.from_user.id}</code>\n✦ <b>ᴜsᴇʀɴᴀᴍᴇ ➠</b> @{message.from_user.username}",
                 )
     else:
         out = private_panel(_)
-        served_chats = len(await get_served_chats())
-        served_users = len(await get_served_users())
-        UP, CPU, RAM, DISK = await bot_sys_stats()
-        await message.reply_video(
-            random.choice(SHASHANK_VD),
-            caption=_["start_2"].format(message.from_user.mention, app.mention, UP, DISK, CPU, RAM, served_users, served_chats),
+        await message.reply_photo(
+            random.choice(SHASHANK_PIC),
+            has_spoiler=True,
+            caption=_["start_2"].format(message.from_user.mention, app.mention),
+            # caption=_["start_2"].format(message.from_user.mention, app.mention, UP, DISK, CPU, RAM,served_users,served_chats),
             reply_markup=InlineKeyboardMarkup(out),
         )
         if await is_on_off(2):
-            await app.send_message(
+            return await app.send_message(
                 chat_id=config.LOGGER_ID,
-                text=f"❖ {message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ.\n\n<b>๏ ᴜsᴇʀ ɪᴅ :</b> <code>{message.from_user.id}</code>\n<b>๏ ᴜsᴇʀɴᴀᴍᴇ :</b> @{message.from_user.username}",
+                text=f"✦ {message.from_user.mention} ᴊᴜsᴛ sᴛᴀʀᴛᴇᴅ ᴛʜᴇ ʙᴏᴛ.\n\n✦ <b>ᴜsᴇʀ ɪᴅ ➠</b> <code>{message.from_user.id}</code>\n✦ <b>ᴜsᴇʀɴᴀᴍᴇ ➠</b> @{message.from_user.username}",
             )
+
 
 @app.on_message(filters.command(["start"]) & filters.group & ~BANNED_USERS)
 @LanguageStart
 async def start_gp(client, message: Message, _):
     out = start_panel(_)
     uptime = int(time.time() - _boot_)
-    await message.reply_video(
-        random.choice(SHASHANK_VD),
+    await message.reply_photo(
+        random.choice(SHASHANK_PIC),
+        has_spoiler=True,
         caption=_["start_1"].format(app.mention, get_readable_time(uptime)),
         reply_markup=InlineKeyboardMarkup(out),
     )
     return await add_served_chat(message.chat.id)
+
 
 @app.on_message(filters.new_chat_members, group=-1)
 async def welcome(client, message: Message):
@@ -183,9 +154,8 @@ async def welcome(client, message: Message):
                     return await app.leave_chat(message.chat.id)
 
                 out = start_panel(_)
-                await message.reply_photo(
-                    random.choice(SHASHANK_PH),
-                    caption=_["start_3"].format(
+                await message.reply_text(
+                    text=_["start_3"].format(
                         message.from_user.mention,
                         app.mention,
                         message.chat.title,
@@ -197,3 +167,4 @@ async def welcome(client, message: Message):
                 await message.stop_propagation()
         except Exception as ex:
             print(ex)
+                    
