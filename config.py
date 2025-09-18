@@ -24,7 +24,7 @@ SONG_DOWNLOAD_DURATION = int(
 LOGGER_ID = int(getenv("LOGGER_ID", ""))
 API_URL = getenv("API_URL", 'https://api.thequickearn.xyz') #youtube song url
 VIDEO_API_URL = getenv("VIDEO_API_URL", 'https://api.video.thequickearn.xyz')
-API_KEY = getenv("API_KEY", "30DxNexGenBots39e64f")
+API_KEY = getenv("API_KEY", "")
 
 OWNER_ID = int(getenv("OWNER_ID", "7905552682"))
 
@@ -38,7 +38,7 @@ HEROKU_API_KEY = getenv("HEROKU_API_KEY")
 
 UPSTREAM_REPO = getenv(
     "UPSTREAM_REPO",
-    "https://github.com/TEAM-KRITI/Lundbot-",
+    "https://github.com/AVENGERSOWNER1/AvengersXAarumi",
 )
 UPSTREAM_BRANCH = getenv("UPSTREAM_BRANCH", "main")
 GIT_TOKEN = getenv(
